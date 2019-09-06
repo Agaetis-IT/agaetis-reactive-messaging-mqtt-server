@@ -48,4 +48,8 @@ public class MqttServerConnector implements IncomingConnectorFactory {
     }
     return source.source();
   }
+
+  int port() {
+    return source == null ? 0 : source.port();
+  }
 }

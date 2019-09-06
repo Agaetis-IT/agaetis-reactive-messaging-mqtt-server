@@ -1,82 +1,78 @@
 package fr.agaetis.reactive.messaging.mqtt.server;
 
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.netty.handler.codec.mqtt.MqttQoS;
-import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.config.SmallRyeConfigBuilder;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.reactivex.core.Vertx;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import org.eclipse.microprofile.config.Config;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(VertxExtension.class)
 class MqttServerSourceTest {
 
-  Config config(Map<String, String> map) {
-    return new SmallRyeConfigBuilder()
-        .withSources(new PropertiesConfigSource(map, "", 0)).build();
-  }
-
   @Test
-  void simpleTest(Vertx vertx, VertxTestContext testContext) throws Throwable {
+  void testSingle(Vertx vertx, VertxTestContext testContext) {
     final Map<String, String> configMap = new HashMap<>();
     configMap.put("port", "0");
-    final MqttServerSource source = new MqttServerSource(vertx, config(configMap));
+    final MqttServerSource source = new MqttServerSource(vertx, TestUtils.config(configMap));
     final PublisherBuilder<MqttMessage> mqttMessagePublisherBuilder = source.source();
-    final Checkpoint clientConnected = testContext.checkpoint();
-    final Checkpoint messageSent = testContext.checkpoint();
+    final TestMqttMessage testMessage = new TestMqttMessage("hello/topic", 1, "Hello world!",
+        MqttQoS.EXACTLY_ONCE.value(), false);
     final Checkpoint messageReceived = testContext.checkpoint();
     final Checkpoint messageAcknowledged = testContext.checkpoint();
-    final Checkpoint clientClosed = testContext.checkpoint();
 
     mqttMessagePublisherBuilder.forEach(mqttMessage -> {
-      testContext.verify(() -> {
-        messageReceived.flag();
-        assertEquals("Hello world!", new String(mqttMessage.getPayload()));
-        assertEquals(1, mqttMessage.getMessageId());
-        assertEquals(MqttQoS.EXACTLY_ONCE, mqttMessage.getQosLevel());
-        assertEquals("hello/topic", mqttMessage.getTopic());
-        assertFalse(mqttMessage.isRetain());
-        assertFalse(mqttMessage.isDuplicate());
-      });
+      testContext.verify(() -> TestUtils.assertEquals(testMessage, mqttMessage));
+      messageReceived.flag();
       mqttMessage.ack().thenApply(aVoid -> {
         messageAcknowledged.flag();
         return aVoid;
       });
     }).run();
-    new Thread(() -> {
-      try {
-        // Wait for the server to listen to a random port
-        await().until(source::port, port -> port != 0);
-        MqttClient mqttClient = new MqttClient("tcp://localhost:" + source.port(),
-            MqttClient.generateClientId());
-        mqttClient.connect();
-        clientConnected.flag();
-        mqttClient.publish("hello/topic", "Hello world!".getBytes(), 2, false);
-        messageSent.flag();
-        mqttClient.disconnect();
-        mqttClient.close();
-        clientClosed.flag();
-      } catch (MqttException e) {
-        testContext.failNow(e);
-      }
-    }).start();
-    assertTrue(testContext.awaitCompletion(5, TimeUnit.MINUTES));
-    if (testContext.failed()) {
-      throw testContext.causeOfFailure();
-    }
+    TestUtils.sendMqttMessages(Collections.singletonList(testMessage),
+        CompletableFuture.supplyAsync(() -> {
+          await().until(source::port, port -> port != 0);
+          return source.port();
+        }), testContext);
+  }
+
+  @Test
+  void testMultiple(Vertx vertx, VertxTestContext testContext) {
+    final Map<String, String> configMap = new HashMap<>();
+    configMap.put("port", "0");
+    final MqttServerSource source = new MqttServerSource(vertx, TestUtils.config(configMap));
+    final PublisherBuilder<MqttMessage> mqttMessagePublisherBuilder = source.source();
+    final List<TestMqttMessage> testMessages = new CopyOnWriteArrayList<>();
+    testMessages.add(new TestMqttMessage("hello/topic", 1, "Hello world!", MqttQoS.EXACTLY_ONCE.value(), false));
+    testMessages.add(new TestMqttMessage("foo/bar", 2, "dkufhdspkjfosdjfs;", MqttQoS.AT_LEAST_ONCE.value(), true));
+    testMessages.add(new TestMqttMessage("foo/bar", -1, "Hello world!", MqttQoS.AT_MOST_ONCE.value(), false));
+    final Checkpoint messageReceived = testContext.checkpoint(testMessages.size());
+    final Checkpoint messageAcknowledged = testContext.checkpoint(testMessages.size());
+    final AtomicInteger index = new AtomicInteger(0);
+
+    mqttMessagePublisherBuilder.forEach(mqttMessage -> {
+      testContext.verify(() -> TestUtils.assertEquals(testMessages.get(index.getAndIncrement()), mqttMessage));
+      messageReceived.flag();
+      mqttMessage.ack().thenApply(aVoid -> {
+        messageAcknowledged.flag();
+        return aVoid;
+      });
+    }).run();
+    TestUtils.sendMqttMessages(testMessages,
+        CompletableFuture.supplyAsync(() -> {
+          await().until(source::port, port -> port != 0);
+          return source.port();
+        }), testContext);
   }
 }

@@ -16,8 +16,9 @@ import org.slf4j.LoggerFactory;
 class MqttServerSource {
 
   private final Logger logger = LoggerFactory.getLogger(MqttServerSource.class);
-  private final MqttServer mqttServer;
+  private final boolean broadcast;
   private final PublisherBuilder<MqttMessage> source;
+  private final MqttServer mqttServer;
 
   private static MqttServerOptions mqttServerOptions(Config config) {
     final MqttServerOptions options = new MqttServerOptions();
@@ -40,10 +41,8 @@ class MqttServerSource {
   }
 
   MqttServerSource(Vertx vertx, Config config) {
-    this(vertx, mqttServerOptions(config));
-  }
-
-  private MqttServerSource(Vertx vertx, MqttServerOptions options) {
+    this.broadcast = config.getOptionalValue("broadcast", Boolean.class).orElse(false);
+    final MqttServerOptions options = mqttServerOptions(config);
     this.mqttServer = MqttServer.create(vertx, options);
     final BehaviorProcessor<MqttMessage> processor = BehaviorProcessor.create();
 
@@ -120,7 +119,14 @@ class MqttServerSource {
             .doOnSuccess(ignored -> logger
                 .info("MQTT server listening on {}:{}", options.getHost(), mqttServer.actualPort()))
             .doOnError(throwable -> logger.error("Failed to start MQTT server", throwable))
-            .toFlowable())
+            .toFlowable()
+            .compose(flow -> {
+              if (broadcast) {
+                return flow.publish().autoConnect();
+              } else {
+                return flow;
+              }
+            }))
         .doOnSubscribe(subscription -> logger.debug("New subscriber added {}", subscription)));
   }
 
