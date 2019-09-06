@@ -1,5 +1,6 @@
 ![GitHub](https://img.shields.io/github/license/Agaetis-IT/agaetis-reactive-messaging-mqtt-server)
 [![Maintainability](https://api.codeclimate.com/v1/badges/9bd7efe823b83b376b31/maintainability)](https://codeclimate.com/github/Agaetis-IT/agaetis-reactive-messaging-mqtt-server/maintainability)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](code-of-conduct.md)
 
 # MQTT server source connector for MicroProfile reactive messaging
 
