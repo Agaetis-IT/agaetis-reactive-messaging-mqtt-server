@@ -1,7 +1,6 @@
 package fr.agaetis.reactive.messaging.mqtt.server;
 
 import io.vertx.reactivex.core.Vertx;
-import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.BeforeDestroyed;
 import javax.enterprise.event.Observes;
@@ -34,6 +33,9 @@ public class MqttServerConnector implements IncomingConnectorFactory {
   }
 
   public void terminate(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event) {
+    if (source != null) {
+      source.close();
+    }
     if (internalVertxInstance) {
       vertx.close();
     }
@@ -45,12 +47,5 @@ public class MqttServerConnector implements IncomingConnectorFactory {
       source = new MqttServerSource(vertx, config);
     }
     return source.source();
-  }
-
-  @PreDestroy
-  public synchronized void close() {
-    if (source != null) {
-      source.close();
-    }
   }
 }
