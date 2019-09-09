@@ -1,8 +1,16 @@
 package fr.agaetis.reactive.messaging.mqtt.server;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.EXACTLY_ONCE;
+import static io.vertx.core.net.NetServerOptions.DEFAULT_HOST;
+import static io.vertx.core.net.NetworkOptions.DEFAULT_RECEIVE_BUFFER_SIZE;
+import static io.vertx.core.net.TCPSSLOptions.DEFAULT_SSL;
+import static io.vertx.mqtt.MqttServerOptions.DEFAULT_MAX_MESSAGE_SIZE;
+import static io.vertx.mqtt.MqttServerOptions.DEFAULT_PORT;
+import static io.vertx.mqtt.MqttServerOptions.DEFAULT_TIMEOUT_ON_CONNECT;
+import static io.vertx.mqtt.MqttServerOptions.DEFAULT_TLS_PORT;
+
 import io.reactivex.processors.BehaviorProcessor;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.mqtt.MqttServerOptions;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.mqtt.MqttServer;
@@ -24,19 +32,19 @@ class MqttServerSource {
     final MqttServerOptions options = new MqttServerOptions();
     options.setAutoClientId(config.getOptionalValue("auto-client-id", Boolean.class).orElse(true));
     options.setSsl(
-        config.getOptionalValue("ssl", Boolean.class).orElse(MqttServerOptions.DEFAULT_SSL));
+        config.getOptionalValue("ssl", Boolean.class).orElse(DEFAULT_SSL));
     // TODO set KeyCertOptions if SSL, c.f. https://vertx.io/docs/vertx-mqtt/java/#_handling_client_connection_disconnection_with_ssl_tls_support
     options.setMaxMessageSize(config.getOptionalValue("max-message-size", Integer.class)
-        .orElse(MqttServerOptions.DEFAULT_MAX_MESSAGE_SIZE));
+        .orElse(DEFAULT_MAX_MESSAGE_SIZE));
     options.setTimeoutOnConnect(config.getOptionalValue("timeout-on-connect", Integer.class)
-        .orElse(MqttServerOptions.DEFAULT_TIMEOUT_ON_CONNECT));
+        .orElse(DEFAULT_TIMEOUT_ON_CONNECT));
     options.setReceiveBufferSize(config.getOptionalValue("receive-buffer-size", Integer.class)
-        .orElse(MqttServerOptions.DEFAULT_RECEIVE_BUFFER_SIZE));
+        .orElse(DEFAULT_RECEIVE_BUFFER_SIZE));
     final int defaultPort =
-        options.isSsl() ? MqttServerOptions.DEFAULT_TLS_PORT : MqttServerOptions.DEFAULT_PORT;
+        options.isSsl() ? DEFAULT_TLS_PORT : DEFAULT_PORT;
     options.setPort(config.getOptionalValue("port", Integer.class).orElse(defaultPort));
     options.setHost(
-        config.getOptionalValue("host", String.class).orElse(NetServerOptions.DEFAULT_HOST));
+        config.getOptionalValue("host", String.class).orElse(DEFAULT_HOST));
     return options;
   }
 
@@ -82,12 +90,12 @@ class MqttServerSource {
             message.qosLevel(), endpoint.clientIdentifier());
 
         processor.onNext(new MqttMessage(message, endpoint.clientIdentifier(), () -> {
-          if (message.qosLevel() == MqttQoS.AT_LEAST_ONCE) {
+          if (message.qosLevel() == AT_LEAST_ONCE) {
             logger.trace("Send PUBACK to client [{}] for message [{}]",
                 endpoint.clientIdentifier(),
                 message.messageId());
             endpoint.publishAcknowledge(message.messageId());
-          } else if (message.qosLevel() == MqttQoS.EXACTLY_ONCE) {
+          } else if (message.qosLevel() == EXACTLY_ONCE) {
             logger.trace("Send PUBREC to client [{}] for message [{}]",
                 endpoint.clientIdentifier(),
                 message.messageId());

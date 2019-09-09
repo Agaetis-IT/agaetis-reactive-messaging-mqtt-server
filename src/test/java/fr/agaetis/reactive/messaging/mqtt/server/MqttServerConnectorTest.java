@@ -1,9 +1,12 @@
 package fr.agaetis.reactive.messaging.mqtt.server;
 
 import static fr.agaetis.reactive.messaging.mqtt.server.TestUtils.createSubscriber;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.EXACTLY_ONCE;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.util.HashMap;
@@ -29,16 +32,19 @@ class MqttServerConnectorTest {
     configMap.put("port", "0");
     final List<TestMqttMessage> testMessages = new CopyOnWriteArrayList<>();
     testMessages.add(
-        new TestMqttMessage("hello/topic", 1, "Hello world!", MqttQoS.EXACTLY_ONCE.value(), false));
+        new TestMqttMessage("hello/topic", 1, "Hello world!", EXACTLY_ONCE.value(), false));
     testMessages.add(
-        new TestMqttMessage("foo/bar", 2, "dkufhdspkjfosdjfs;", MqttQoS.AT_LEAST_ONCE.value(),
+        new TestMqttMessage("foo/bar", 2, "dkufhdspkjfosdjfs;", AT_LEAST_ONCE.value(),
             true));
     testMessages.add(
-        new TestMqttMessage("foo/bar", -1, "Hello world!", MqttQoS.AT_MOST_ONCE.value(), false));
+        new TestMqttMessage("foo/bar", -1, "Hello world!", AT_MOST_ONCE.value(), false));
     testMessages
-        .add(new TestMqttMessage("sa/srt/tgvbc", 3, "Yeah", MqttQoS.EXACTLY_ONCE.value(), true));
+        .add(new TestMqttMessage("sa/srt/tgvbc", 3, "Yeah", EXACTLY_ONCE.value(), true));
     final PublisherBuilder<MqttMessage> builder = (PublisherBuilder<MqttMessage>) connector
         .getPublisherBuilder(TestUtils.config(configMap));
+
+    // The source is the same for every call
+    assertEquals(builder, connector.getPublisherBuilder(TestUtils.config(configMap)));
 
     builder.buildRs().subscribe(createSubscriber(testContext, opened, testMessages));
 
@@ -57,16 +63,19 @@ class MqttServerConnectorTest {
     configMap.put("broadcast", "true");
     final List<TestMqttMessage> testMessages = new CopyOnWriteArrayList<>();
     testMessages.add(
-        new TestMqttMessage("hello/topic", 1, "Hello world!", MqttQoS.EXACTLY_ONCE.value(), false));
+        new TestMqttMessage("hello/topic", 1, "Hello world!", EXACTLY_ONCE.value(), false));
     testMessages.add(
-        new TestMqttMessage("foo/bar", 2, "dkufhdspkjfosdjfs;", MqttQoS.AT_LEAST_ONCE.value(),
+        new TestMqttMessage("foo/bar", 2, "dkufhdspkjfosdjfs;", AT_LEAST_ONCE.value(),
             true));
     testMessages.add(
-        new TestMqttMessage("foo/bar", -1, "Hello world!", MqttQoS.AT_MOST_ONCE.value(), false));
+        new TestMqttMessage("foo/bar", -1, "Hello world!", AT_MOST_ONCE.value(), false));
     testMessages
-        .add(new TestMqttMessage("sa/srt/tgvbc", 3, "Yeah", MqttQoS.EXACTLY_ONCE.value(), true));
+        .add(new TestMqttMessage("sa/srt/tgvbc", 3, "Yeah", EXACTLY_ONCE.value(), true));
     final PublisherBuilder<MqttMessage> builder = (PublisherBuilder<MqttMessage>) connector
         .getPublisherBuilder(TestUtils.config(configMap));
+
+    // The source is the same for every call
+    assertEquals(builder, connector.getPublisherBuilder(TestUtils.config(configMap)));
 
     final Publisher<MqttMessage> publisher = builder.buildRs();
     publisher.subscribe(createSubscriber(testContext, opened, testMessages));

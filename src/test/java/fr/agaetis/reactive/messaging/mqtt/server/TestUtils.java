@@ -55,7 +55,7 @@ class TestUtils {
     }).start());
   }
 
-  static void assertEquals(TestMqttMessage expected,
+  static void assertMqttEquals(TestMqttMessage expected,
       fr.agaetis.reactive.messaging.mqtt.server.MqttMessage message) {
     Assertions.assertEquals(expected.getId(), message.getMessageId());
     Assertions.assertEquals(expected.getTopic(), message.getTopic());
@@ -84,7 +84,7 @@ class TestUtils {
       @Override
       public void onNext(fr.agaetis.reactive.messaging.mqtt.server.MqttMessage message) {
         testContext.verify(() ->
-            TestUtils.assertEquals(expectedMessages.get(index.getAndIncrement()), message)
+            TestUtils.assertMqttEquals(expectedMessages.get(index.getAndIncrement()), message)
         );
         messageReceived.flag();
         message.ack().thenAccept(v -> messageAcknowledged.flag());

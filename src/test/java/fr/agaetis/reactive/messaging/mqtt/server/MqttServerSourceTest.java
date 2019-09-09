@@ -1,8 +1,10 @@
 package fr.agaetis.reactive.messaging.mqtt.server;
 
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_LEAST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.AT_MOST_ONCE;
+import static io.netty.handler.codec.mqtt.MqttQoS.EXACTLY_ONCE;
 import static org.awaitility.Awaitility.await;
 
-import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -28,12 +30,12 @@ class MqttServerSourceTest {
     final MqttServerSource source = new MqttServerSource(vertx, TestUtils.config(configMap));
     final PublisherBuilder<MqttMessage> mqttMessagePublisherBuilder = source.source();
     final TestMqttMessage testMessage = new TestMqttMessage("hello/topic", 1, "Hello world!",
-        MqttQoS.EXACTLY_ONCE.value(), false);
+        EXACTLY_ONCE.value(), false);
     final Checkpoint messageReceived = testContext.checkpoint();
     final Checkpoint messageAcknowledged = testContext.checkpoint();
 
     mqttMessagePublisherBuilder.forEach(mqttMessage -> {
-      testContext.verify(() -> TestUtils.assertEquals(testMessage, mqttMessage));
+      testContext.verify(() -> TestUtils.assertMqttEquals(testMessage, mqttMessage));
       messageReceived.flag();
       mqttMessage.ack().thenApply(aVoid -> {
         messageAcknowledged.flag();
@@ -54,15 +56,19 @@ class MqttServerSourceTest {
     final MqttServerSource source = new MqttServerSource(vertx, TestUtils.config(configMap));
     final PublisherBuilder<MqttMessage> mqttMessagePublisherBuilder = source.source();
     final List<TestMqttMessage> testMessages = new CopyOnWriteArrayList<>();
-    testMessages.add(new TestMqttMessage("hello/topic", 1, "Hello world!", MqttQoS.EXACTLY_ONCE.value(), false));
-    testMessages.add(new TestMqttMessage("foo/bar", 2, "dkufhdspkjfosdjfs;", MqttQoS.AT_LEAST_ONCE.value(), true));
-    testMessages.add(new TestMqttMessage("foo/bar", -1, "Hello world!", MqttQoS.AT_MOST_ONCE.value(), false));
+    testMessages
+        .add(new TestMqttMessage("hello/topic", 1, "Hello world!", EXACTLY_ONCE.value(), false));
+    testMessages
+        .add(new TestMqttMessage("foo/bar", 2, "dkufhdspkjfosdjfs;", AT_LEAST_ONCE.value(), true));
+    testMessages
+        .add(new TestMqttMessage("foo/bar", -1, "Hello world!", AT_MOST_ONCE.value(), false));
     final Checkpoint messageReceived = testContext.checkpoint(testMessages.size());
     final Checkpoint messageAcknowledged = testContext.checkpoint(testMessages.size());
     final AtomicInteger index = new AtomicInteger(0);
 
     mqttMessagePublisherBuilder.forEach(mqttMessage -> {
-      testContext.verify(() -> TestUtils.assertEquals(testMessages.get(index.getAndIncrement()), mqttMessage));
+      testContext.verify(
+          () -> TestUtils.assertMqttEquals(testMessages.get(index.getAndIncrement()), mqttMessage));
       messageReceived.flag();
       mqttMessage.ack().thenApply(aVoid -> {
         messageAcknowledged.flag();
