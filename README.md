@@ -1,7 +1,8 @@
 ![GitHub](https://img.shields.io/github/license/Agaetis-IT/agaetis-reactive-messaging-mqtt-server)
 [![CircleCI](https://circleci.com/gh/Agaetis-IT/agaetis-reactive-messaging-mqtt-server.svg?style=svg)](https://circleci.com/gh/Agaetis-IT/agaetis-reactive-messaging-mqtt-server)
-[![Maintainability](https://api.codeclimate.com/v1/badges/9bd7efe823b83b376b31/maintainability)](https://codeclimate.com/github/Agaetis-IT/agaetis-reactive-messaging-mqtt-server/maintainability)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](code-of-conduct.md)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=agaetis-reactive-messaging-mqtt-server&metric=alert_status)](https://sonarcloud.io/dashboard?id=agaetis-reactive-messaging-mqtt-server)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=agaetis-reactive-messaging-mqtt-server&metric=coverage)](https://sonarcloud.io/dashboard?id=agaetis-reactive-messaging-mqtt-server)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg)](CODE_OF_CONDUCT.md)
 
 # MQTT server source connector for MicroProfile reactive messaging
 
