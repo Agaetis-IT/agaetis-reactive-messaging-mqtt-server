@@ -33,7 +33,7 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}
 
       # run tests, coverage and Sonar!
-      - run: mvn -Pcoverage,sonar -Dsonar.login=${SONAR_LOGIN} clean test
+      - run: mvn -Pcoverage,sonar -Dsonar.login=${SONAR_LOGIN} clean verify
 
       - store_artifacts:
           path:  target
