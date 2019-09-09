@@ -33,6 +33,14 @@
       <distribution>repo</distribution>
     </license>
   </licenses>
+  <developers>
+    <developer>
+      <id>francois-travais</id>
+      <name>François Travais</name>
+      <email>francois[DOT]travais[AT]agaetis[DOT]fr</email>
+      <url>https://github.com/francois-travais</url>
+    </developer>
+  </developers>
 
   <properties>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
