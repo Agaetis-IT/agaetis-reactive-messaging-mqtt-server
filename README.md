@@ -1,3 +1,6 @@
+# NOTE: This project [has been merged into SmallRye Reactive Messaging](https://github.com/smallrye/smallrye-reactive-messaging/pull/185)
+
+
 ![GitHub](https://img.shields.io/github/license/Agaetis-IT/agaetis-reactive-messaging-mqtt-server)
 [![CircleCI](https://circleci.com/gh/Agaetis-IT/agaetis-reactive-messaging-mqtt-server.svg?style=svg)](https://circleci.com/gh/Agaetis-IT/agaetis-reactive-messaging-mqtt-server)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=agaetis-reactive-messaging-mqtt-server&metric=alert_status)](https://sonarcloud.io/dashboard?id=agaetis-reactive-messaging-mqtt-server)
